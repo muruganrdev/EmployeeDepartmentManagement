@@ -21,23 +21,6 @@ namespace LeetCode.Day01
     /// </summary>
     public class Solution
     {
-        /// <summary>
-        /// Constructs an array of length 2n containing two concatenated copies of nums.
-        /// 
-        /// Approach:
-        /// 1. Let n be the length of the input array nums.
-        /// 2. Allocate a new integer array `ans` of size 2 * n.
-        /// 3. Loop through index i from 0 to n - 1:
-        ///    - Assign ans[i] = nums[i] (first half)
-        ///    - Assign ans[i + n] = nums[i] (second half)
-        /// 4. Return the populated ans array.
-        /// 
-        /// Time Complexity:
-        /// O(n) - We perform a single loop running exactly n times, doing constant-time O(1) operations.
-        /// 
-        /// Space Complexity:
-        /// O(n) - We allocate a new array of size 2n to store the answer. No extra auxiliary data structures.
-        /// </summary>
         public int[] GetConcatenation(int[] nums)
         {
             if (nums == null)
@@ -50,23 +33,16 @@ namespace LeetCode.Day01
 
             for (int i = 0; i < n; i++)
             {
-                ans[i] = nums[i];       // First occurrence
-                ans[i + n] = nums[i];   // Second occurrence
+                ans[i] = nums[i];      
+                ans[i + n] = nums[i];   
             }
 
             return ans;
         }
 
-        /// <summary>
-        /// Verification harness with comprehensive test cases including edge cases.
-        /// </summary>
         public static void Main(string[] args)
         {
             var solution = new Solution();
-
-            Console.WriteLine("=================================================");
-            Console.WriteLine(" LeetCode 1929: Concatenation of Array - Tests   ");
-            Console.WriteLine("=================================================");
 
             // Test Case 1: Standard case
             int[] test1 = new int[] { 1, 2, 1 };
