@@ -207,3 +207,24 @@ Add-Type -Path "docs/Week-1/Day-1/ConcatenationOfArray.cs"
 | [`docs/Week-1/Day-1/Value-vs-Reference-Types.md`](docs/Week-1/Day-1/Value-vs-Reference-Types.md) | Deep dive into Stack vs Heap, copying semantics, and cloning. |
 | [`docs/Week-1/Day-1/Execution-Flow.md`](docs/Week-1/Day-1/Execution-Flow.md) | Application runtime lifecycle and data flow diagrams. |
 | [`docs/Week-1/Day-1/LeetCode-Notes.md`](docs/Week-1/Day-1/LeetCode-Notes.md) | LeetCode 1929 problem analysis, complexity, and tests. |
+| [`docs/Week-1/Day-2/Concepts.md`](docs/Week-1/Day-2/Concepts.md) | Comprehensive Object-Oriented C# guide (Classes, Interfaces, Structs, Records). |
+| [`docs/Week-1/Day-2/OOP-Implementation-Notes.md`](docs/Week-1/Day-2/OOP-Implementation-Notes.md) | Architectural notes on Domain Class Library and polymorphism. |
+| [`docs/Week-1/Day-2/SOLID-Principles.md`](docs/Week-1/Day-2/SOLID-Principles.md) | Detailed analysis of all 5 SOLID principles with code examples. |
+| [`docs/Week-1/Day-2/UML-Class-Diagram.md`](docs/Week-1/Day-2/UML-Class-Diagram.md) | Visual Mermaid UML diagram detailing classes, interfaces, and associations. |
+| [`docs/Week-1/Day-2/LeetCode-Notes.md`](docs/Week-1/Day-2/LeetCode-Notes.md) | LeetCode 1342 problem analysis, bit manipulation, and test suite. |
+
+---
+
+## Week 1 – Day 2: Object-Oriented C# Implementation
+
+### Architecture Overview
+Day 2 transitioned the solution into a **multi-project domain architecture**:
+1. **`EmployeeDepartmentManagement.Core`**: Class library encapsulating `Employee` (abstract base), `FullTimeEmployee`, `ContractEmployee`, `Department` (composition), `IPayrollCalculable` (interface), `IEmployeeService`, `EmployeeSummary` (record), and `WorkHours` (struct).
+2. **`EmployeeDepartmentManagement.App`**: Console application consuming `Core` through interface abstractions.
+
+### Day 2 LeetCode Solution
+- **Problem**: [LeetCode 1342: Number of Steps to Reduce a Number to Zero](https://leetcode.com/problems/number-of-steps-to-reduce-a-number-to-zero/)
+- **Location**: [`docs/Week-1/Day-2/NumberOfStepsToReduceNumberToZero.cs`](docs/Week-1/Day-2/NumberOfStepsToReduceNumberToZero.cs)
+- **Complexity**: Time: **O(log n)**, Space: **O(1)**.
+- **Verification**: 5 automated test cases passing in standalone runner.
+
