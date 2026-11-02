@@ -1,19 +1,25 @@
 using System.Text;
-using EmployeeDepartmentManagement.App.Models;
+using EmployeeDepartmentManagement.Core.Interfaces;
+using EmployeeDepartmentManagement.Core.Models;
+using EmployeeDepartmentManagement.Core.ValueObjects;
 
 namespace EmployeeDepartmentManagement.App.Services;
 
 /// <summary>
 /// Service managing in-memory employee records.
-/// Demonstrates C# Collections: List&lt;T&gt;, Dictionary&lt;TKey, TValue&gt;,
-/// Loops (foreach, for, while), StringBuilder, and Method Overloading.
+/// Demonstrates:
+/// - Interface Implementation (implements IEmployeeService)
+/// - Polymorphism (manages both FullTimeEmployee and ContractEmployee through base Employee reference)
+/// - Encapsulation and Data Validation
+/// - Collections (List<Employee>, Dictionary<int, Employee>)
+/// - StringBuilder for report generation
 /// </summary>
-public class EmployeeService
+public class EmployeeService : IEmployeeService
 {
-    // List<T>: Dynamic ordered collection for sequential access and filtering
+    // List<Employee>: Stores base Employee references polymorphically pointing to FullTimeEmployee or ContractEmployee
     private readonly List<Employee> _employeeList = new();
 
-    // Dictionary<TKey, TValue>: Hash table key-value pair collection for O(1) instant ID lookup
+    // Dictionary<int, Employee>: Fast O(1) hash index for ID lookups
     private readonly Dictionary<int, Employee> _employeeIndex = new();
 
     public EmployeeService()
@@ -22,18 +28,19 @@ public class EmployeeService
     }
 
     /// <summary>
-    /// Seeds realistic initial employee records.
-    /// Demonstrates object initialization and collection population.
+    /// Seeds realistic initial employee records illustrating both Full-Time and Contract workers.
+    /// Demonstrates Liskov Substitution Principle (LSP): Both derived types are stored
+    /// interchangeably in a List of the abstract base class.
     /// </summary>
     private void SeedSampleData()
     {
-        var sampleEmployees = new[]
+        var sampleEmployees = new Employee[]
         {
-            new Employee(101, "Aarav", "Sharma", null, "Engineering", 85000m, 5000m, 28, 5, new DateTime(2021, 3, 15), true),
-            new Employee(102, "Priya", "Natarajan", "R", "Human Resources", 62000m, 3500m, 31, 7, new DateTime(2019, 7, 1), true),
-            new Employee(103, "Murugan", "R", null, "Engineering", 95000m, 8000m, 29, 6, new DateTime(2020, 1, 10), true),
-            new Employee(104, "Ananya", "Deshmukh", "S", "Finance", 78000m, null, 26, 3, new DateTime(2023, 5, 20), true),
-            new Employee(105, "Vikram", "Malhotra", null, "Marketing", 71000m, 4000m, 34, 9, new DateTime(2018, 11, 12), true)
+            new FullTimeEmployee(101, "Aarav", "Sharma", null, Department.FromName("Engineering"), 85000m, 5000m, 28, 5, new DateTime(2021, 3, 15)),
+            new FullTimeEmployee(102, "Priya", "Natarajan", "R", Department.FromName("Human Resources"), 62000m, 3500m, 31, 7, new DateTime(2019, 7, 1)),
+            new FullTimeEmployee(103, "Murugan", "R", null, Department.FromName("Engineering"), 95000m, 8000m, 29, 6, new DateTime(2020, 1, 10)),
+            new ContractEmployee(104, "Ananya", "Deshmukh", "S", Department.FromName("Finance"), 65.00m, 160, new DateTime(2025, 12, 31), 26, 3, new DateTime(2023, 5, 20), "TechPro Staffing"),
+            new ContractEmployee(105, "Vikram", "Malhotra", null, Department.FromName("Marketing"), 55.00m, 150, new DateTime(2025, 9, 30), 34, 9, new DateTime(2018, 11, 12), "Creative Consultants")
         };
 
         foreach (var emp in sampleEmployees)
@@ -44,77 +51,58 @@ public class EmployeeService
     }
 
     /// <summary>
-    /// Validates employee input fields before persisting.
-    /// Demonstrates input validation and string inspection methods.
+    /// Validates employee state according to domain business rules.
     /// </summary>
     public (bool IsValid, string ErrorMessage) ValidateEmployee(Employee emp)
     {
         if (emp.Id <= 0)
-        {
             return (false, "Employee ID must be a positive integer greater than zero.");
-        }
 
-        if (string.IsNullOrWhiteSpace(emp.FirstName))
-        {
-            return (false, "First Name is mandatory and cannot be blank.");
-        }
-
-        if (emp.FirstName.Trim().Length < 2)
-        {
+        if (string.IsNullOrWhiteSpace(emp.FirstName) || emp.FirstName.Trim().Length < 2)
             return (false, "First Name must contain at least 2 characters.");
-        }
 
         if (string.IsNullOrWhiteSpace(emp.LastName))
-        {
             return (false, "Last Name is mandatory and cannot be blank.");
-        }
 
-        if (string.IsNullOrWhiteSpace(emp.Department))
-        {
-            return (false, "Department is mandatory.");
-        }
-
-        if (!Department.IsValid(emp.Department))
+        if (emp.Department == null || !Department.IsValid(emp.Department.Name))
         {
             string allowed = string.Join(", ", Department.ValidDepartments);
-            return (false, $"Invalid Department '{emp.Department}'. Allowed departments are: {allowed}");
-        }
-
-        if (emp.BaseSalary <= 0m)
-        {
-            return (false, "Base Salary must be a positive decimal value.");
-        }
-
-        if (emp.PerformanceBonus.HasValue && emp.PerformanceBonus.Value < 0m)
-        {
-            return (false, "Performance Bonus cannot be negative.");
+            return (false, $"Invalid Department. Allowed departments are: {allowed}");
         }
 
         if (emp.Age < 18 || emp.Age > 75)
-        {
             return (false, "Employee age must be between 18 and 75.");
-        }
 
         if (emp.YearsOfExperience < 0 || emp.YearsOfExperience > emp.Age - 16)
-        {
-            return (false, "Years of Experience must be non-negative and realistic for the given age.");
-        }
+            return (false, "Years of Experience must be realistic for the given age.");
 
         if (emp.JoiningDate > DateTime.Today)
-        {
             return (false, "Joining Date cannot be in the future.");
+
+        // Type-specific domain validation
+        if (emp is FullTimeEmployee ft)
+        {
+            if (ft.BaseSalary <= 0m)
+                return (false, "Base Salary for a full-time employee must be positive.");
+            if (ft.AnnualBonus.HasValue && ft.AnnualBonus.Value < 0m)
+                return (false, "Annual Bonus cannot be negative.");
+        }
+        else if (emp is ContractEmployee ct)
+        {
+            if (ct.HourlyRate <= 0m)
+                return (false, "Hourly rate for a contractor must be greater than zero.");
+            if (ct.HoursWorked < 0 || ct.HoursWorked > 300)
+                return (false, "Hours worked must be between 0 and 300 hours.");
         }
 
         return (true, string.Empty);
     }
 
     /// <summary>
-    /// Adds a new employee into both List and Dictionary.
-    /// Demonstrates duplicate ID check and collection synchronization.
+    /// Enrolls a new employee into the system, enforcing uniqueness and data integrity.
     /// </summary>
     public bool AddEmployee(Employee emp, out string errorMessage)
     {
-        // Check for duplicate ID using Dictionary's O(1) ContainsKey check
         if (_employeeIndex.ContainsKey(emp.Id))
         {
             errorMessage = $"An employee with ID {emp.Id} already exists.";
@@ -128,12 +116,6 @@ public class EmployeeService
             return false;
         }
 
-        // Clean up strings using String.Trim()
-        emp.FirstName = emp.FirstName.Trim();
-        emp.LastName = emp.LastName.Trim();
-        emp.MiddleName = string.IsNullOrWhiteSpace(emp.MiddleName) ? null : emp.MiddleName.Trim();
-        emp.Department = emp.Department.Trim();
-
         _employeeList.Add(emp);
         _employeeIndex.Add(emp.Id, emp);
 
@@ -142,8 +124,7 @@ public class EmployeeService
     }
 
     /// <summary>
-    /// Retrieves an employee by ID using O(1) Dictionary lookup.
-    /// Demonstrates TryGetValue and nullable return type Employee?.
+    /// Instant O(1) retrieval using dictionary hash indexing.
     /// </summary>
     public Employee? GetEmployeeById(int id)
     {
@@ -151,49 +132,47 @@ public class EmployeeService
         {
             return emp;
         }
-
         return null;
     }
 
     /// <summary>
-    /// Method Overload 1: Searches employees by Department (case-insensitive).
-    /// Demonstrates method overloading, foreach loop, and string comparison.
+    /// Generates an immutable snapshot record for an employee.
+    /// </summary>
+    public EmployeeSummary GetEmployeeSummary(int id)
+    {
+        var emp = GetEmployeeById(id) ?? throw new KeyNotFoundException($"Employee with ID {id} was not found.");
+        return emp.ToSummary();
+    }
+
+    /// <summary>
+    /// Searches employees by Department (case-insensitive).
     /// </summary>
     public List<Employee> SearchEmployees(string department)
     {
         var matched = new List<Employee>();
-
         if (string.IsNullOrWhiteSpace(department))
-        {
             return matched;
-        }
 
         foreach (var emp in _employeeList)
         {
-            if (emp.Department.Equals(department.Trim(), StringComparison.OrdinalIgnoreCase))
+            if (emp.Department.Name.Equals(department.Trim(), StringComparison.OrdinalIgnoreCase))
             {
                 matched.Add(emp);
             }
         }
-
         return matched;
     }
 
     /// <summary>
-    /// Method Overload 2: Searches employees by Full Name search term.
-    /// Demonstrates String.Contains() case-insensitive matching.
+    /// Searches employees by Name query (case-insensitive substring match).
     /// </summary>
     public List<Employee> SearchEmployeesByName(string nameQuery)
     {
         var matched = new List<Employee>();
-
         if (string.IsNullOrWhiteSpace(nameQuery))
-        {
             return matched;
-        }
 
         string query = nameQuery.Trim().ToLowerInvariant();
-
         foreach (var emp in _employeeList)
         {
             if (emp.FullName.ToLowerInvariant().Contains(query))
@@ -201,90 +180,72 @@ public class EmployeeService
                 matched.Add(emp);
             }
         }
-
         return matched;
     }
 
-    /// <summary>
-    /// Returns all employee records in order.
-    /// </summary>
-    public IReadOnlyList<Employee> GetAllEmployees()
-    {
-        return _employeeList.AsReadOnly();
-    }
+    public IReadOnlyList<Employee> GetAllEmployees() => _employeeList.AsReadOnly();
 
     /// <summary>
-    /// Calculates aggregate salary statistics using arithmetic operators and loops.
-    /// Returns a named Tuple containing payroll metrics.
+    /// Computes aggregate payroll metrics polymorphically.
+    /// Notice how CalculateGrossPay() dynamically dispatches to either FullTimeEmployee
+    /// or ContractEmployee without type-checking if/else ladders!
     /// </summary>
     public (int Count, decimal TotalPayroll, decimal AverageSalary, decimal HighestSalary, decimal LowestSalary) GetPayrollStatistics()
     {
         if (_employeeList.Count == 0)
-        {
             return (0, 0m, 0m, 0m, 0m);
-        }
 
         decimal totalPayroll = 0m;
         decimal highestSalary = decimal.MinValue;
         decimal lowestSalary = decimal.MaxValue;
 
-        // Using for loop to demonstrate index-based iteration
         for (int i = 0; i < _employeeList.Count; i++)
         {
-            decimal comp = _employeeList[i].CalculateGrossCompensation();
+            // Runtime Polymorphism: CalculateGrossPay() resolves to the concrete derived type
+            decimal comp = _employeeList[i].CalculateGrossPay();
             totalPayroll += comp;
 
-            if (comp > highestSalary)
-            {
-                highestSalary = comp;
-            }
-
-            if (comp < lowestSalary)
-            {
-                lowestSalary = comp;
-            }
+            if (comp > highestSalary) highestSalary = comp;
+            if (comp < lowestSalary) lowestSalary = comp;
         }
 
         decimal averageSalary = totalPayroll / _employeeList.Count;
-
         return (_employeeList.Count, totalPayroll, averageSalary, highestSalary, lowestSalary);
     }
 
     /// <summary>
     /// Generates a comprehensive payroll summary report using StringBuilder.
-    /// Demonstrates StringBuilder efficiency over string concatenation.
     /// </summary>
     public string GeneratePayrollReport()
     {
         var stats = GetPayrollStatistics();
 
         var sb = new StringBuilder();
-        sb.AppendLine("=========================================================================================");
-        sb.AppendLine("                            EMPLOYEE PAYROLL SUMMARY REPORT                             ");
-        sb.AppendLine("=========================================================================================");
-        sb.AppendLine(string.Format("{0,-6} | {1,-22} | {2,-16} | {3,-12} | {4,-10} | {5,-10}",
-            "ID", "Name", "Department", "Base Salary", "Bonus", "Net Pay"));
-        sb.AppendLine("-----------------------------------------------------------------------------------------");
+        sb.AppendLine("=================================================================================================");
+        sb.AppendLine("                             EMPLOYEE PAYROLL SUMMARY REPORT (OOP)                               ");
+        sb.AppendLine("=================================================================================================");
+        sb.AppendLine(string.Format("{0,-6} | {1,-20} | {2,-16} | {3,-10} | {4,-12} | {5,-12}",
+            "ID", "Name", "Department", "Type", "Gross Pay", "Net Pay"));
+        sb.AppendLine("-------------------------------------------------------------------------------------------------");
 
         foreach (var emp in _employeeList)
         {
-            string bonusStr = emp.PerformanceBonus.HasValue ? emp.PerformanceBonus.Value.ToString("C") : "None";
-            sb.AppendLine(string.Format("{0,-6} | {1,-22} | {2,-16} | {3,-12:C} | {4,-10} | {5,-10:C}",
+            sb.AppendLine(string.Format("{0,-6} | {1,-20} | {2,-16} | {3,-10} | {4,-12:C} | {5,-12:C}",
                 emp.Id,
-                emp.FullName.Length > 22 ? emp.FullName.Substring(0, 19) + "..." : emp.FullName,
-                emp.Department,
-                emp.BaseSalary,
-                bonusStr,
+                emp.FullName.Length > 20 ? emp.FullName.Substring(0, 17) + "..." : emp.FullName,
+                emp.Department.Name,
+                emp.GetEmployeeType(),
+                emp.CalculateGrossPay(),
                 emp.CalculateNetPay()));
         }
 
-        sb.AppendLine("-----------------------------------------------------------------------------------------");
-        sb.AppendLine($"Total Active Headcount : {stats.Count}");
-        sb.AppendLine($"Total Gross Payroll    : {stats.TotalPayroll:C}");
-        sb.AppendLine($"Average Compensation   : {stats.AverageSalary:C}");
-        sb.AppendLine($"Highest Compensation   : {stats.HighestSalary:C}");
-        sb.AppendLine($"Lowest Compensation    : {stats.LowestSalary:C}");
-        sb.AppendLine("=========================================================================================");
+        sb.AppendLine("-------------------------------------------------------------------------------------------------");
+        sb.AppendLine($"Total Headcount      : {stats.Count}");
+        sb.AppendLine($"Total Gross Payroll  : {stats.TotalPayroll:C}");
+        sb.AppendLine($"Average Compensation : {stats.AverageSalary:C}");
+        sb.AppendLine($"Highest Compensation : {stats.HighestSalary:C}");
+        sb.AppendLine($"Lowest Compensation  : {stats.LowestSalary:C}");
+        sb.AppendLine("=================================================================================================");
 
         return sb.ToString();
     }
