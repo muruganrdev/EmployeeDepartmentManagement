@@ -1,25 +1,31 @@
 using System.Globalization;
+using EmployeeDepartmentManagement.App.Demonstrations;
 using EmployeeDepartmentManagement.App.Services;
 using EmployeeDepartmentManagement.Core.Interfaces;
 using EmployeeDepartmentManagement.Core.Models;
+using EmployeeDepartmentManagement.Core.OrderManagement.Interfaces;
+using EmployeeDepartmentManagement.Core.OrderManagement.Models;
+using EmployeeDepartmentManagement.Core.OrderManagement.Repositories;
+using EmployeeDepartmentManagement.Core.OrderManagement.Services;
+using EmployeeDepartmentManagement.Core.Services;
 using EmployeeDepartmentManagement.Core.ValueObjects;
 
 namespace EmployeeDepartmentManagement.App;
 
 /// <summary>
 /// Console Presentation Layer.
-/// Demonstrates Week 1 Day 2 Object-Oriented Programming:
-/// - Polymorphism (invoking overridden methods on base-class references)
-/// - Encapsulation (safely handling data through property validation)
-/// - Classes vs Records vs Structs
-/// - Interface-Based Service Usage (IEmployeeService)
+/// Demonstrates Week 1:
+/// - Day 1: C# Fundamentals & Value vs Reference Memory
+/// - Day 2: Object-Oriented Programming (Polymorphism, Encapsulation, Records, Structs, Orders)
+/// - Day 3: Modern C# and LINQ (Collections, Generics, Lambdas, Delegates, Events, Deferred Execution, Extensions, Pattern Matching)
 /// </summary>
 public static class Program
 {
-    // Dependency Inversion: Program depends on the IEmployeeService abstraction
+    // Dependency Inversion: Program depends on abstractions
     private static readonly IEmployeeService _employeeService = new EmployeeService();
+    private static readonly IEmployeeQueryService _queryService = new EmployeeQueryService();
 
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         DisplayWelcomeBanner();
@@ -31,7 +37,7 @@ public static class Program
             try
             {
                 DisplayMenu();
-                Console.Write("Enter your selection (1-7): ");
+                Console.Write("Enter your selection (1-9, 7/10 to Exit): ");
                 string? rawInput = Console.ReadLine();
 
                 if (rawInput == null)
@@ -69,14 +75,21 @@ public static class Program
                         HandleOopDemonstration();
                         break;
                     case "7":
+                    case "10":
                         isRunning = false;
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("Thank you for using the Employee & Department Management System. Goodbye!");
                         Console.ResetColor();
                         break;
+                    case "8":
+                        ModernCSharpDemonstration.Run(_employeeService, _queryService);
+                        break;
+                    case "9":
+                        await AsyncDemonstration.RunAsync(_employeeService);
+                        break;
                     default:
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine($"Invalid selection '{input}'. Please choose an option between 1 and 7.");
+                        Console.WriteLine($"Invalid selection '{input}'. Please choose an option between 1 and 9 (or 7/10 to exit).");
                         Console.ResetColor();
                         break;
                 }
@@ -142,8 +155,11 @@ public static class Program
         Console.WriteLine("  3. Search Employee by ID (O(1) Dictionary Lookup & Record Summary)");
         Console.WriteLine("  4. Search Employees by Department");
         Console.WriteLine("  5. View Payroll & Compensation Statistics (Polymorphic Calculation)");
-        Console.WriteLine("  6. Run OOP & C# Deep Dive Demo (Inheritance, Records, Structs, Polymorphism)");
-        Console.WriteLine("  7. Exit Application");
+        Console.WriteLine("  6. Run OOP & Day 2 Deep Dive Demo (Inheritance, Records, Structs, Orders)");
+        Console.WriteLine("  7. Exit Application (or press 10)");
+        Console.WriteLine("  8. Run Modern C# & LINQ Deep Dive (Week 1 - Day 3)");
+        Console.WriteLine("  9. Run Async/Await & CancellationToken Deep Dive (Week 1 - Day 4)");
+        Console.WriteLine(" 10. Exit Application");
         Console.ForegroundColor = ConsoleColor.DarkCyan;
         Console.WriteLine("---------------------------------------------------------------------------------");
         Console.ResetColor();
@@ -437,6 +453,60 @@ public static class Program
         Console.ResetColor();
         Console.WriteLine($"  Employee: {ft.FullName}");
         Console.WriteLine($"  Department object composed inside: {ft.Department}");
+
+        // --- PART 5: ORDER MANAGEMENT DOMAIN & INTERFACE-BASED DESIGN ---
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("\n[5] Order Management Domain & Interface-Based Architecture:");
+        Console.ResetColor();
+        Console.WriteLine("Flow: Customer -> Order -> OrderItem -> Product via IOrderService & IOrderRepository");
+
+        // 1. Domain Entities Construction & Encapsulation
+        var customer = new Customer(1, "Alice Smith", "alice.smith@example.com");
+        var laptop = new Product(101, "Dell XPS 15 Laptop", 1899.99m, 10);
+        var mouse = new Product(102, "Logitech MX Master 3S", 99.99m, 25);
+
+        Console.WriteLine($"  Customer  : {customer}");
+        Console.WriteLine($"  Product 1 : {laptop}");
+        Console.WriteLine($"  Product 2 : {mouse}");
+
+        // 2. Interface-Based Service and Repository Wiring (DIP)
+        IOrderRepository orderRepo = new InMemoryOrderRepository();
+        IOrderService orderService = new OrderService(orderRepo);
+
+        // 3. Creating Order through Interface Contract
+        var items = new List<(Product Product, int Quantity)>
+        {
+            (laptop, 1),
+            (mouse, 2)
+        };
+
+        var order = orderService.CreateOrder(customer, items);
+        Console.WriteLine($"\n  Order Created: [Order #{order.OrderId}] Date: {order.OrderDate:yyyy-MM-dd HH:mm}");
+        Console.WriteLine($"  Customer on Order: {order.Customer.Name}");
+        Console.WriteLine("  Order Items:");
+        foreach (var item in order.OrderItems)
+        {
+            Console.WriteLine($"    • {item.Product.Name} x {item.Quantity} @ {item.UnitPrice:C} = {item.CalculateSubtotal():C}");
+        }
+        Console.WriteLine($"  Calculated Total: {order.CalculateTotal():C}");
+        Console.WriteLine($"  Remaining Stock -> Laptop: {laptop.AvailableStock}, Mouse: {mouse.AvailableStock}");
+
+        // 4. Retrieving from Repository via Interface
+        var retrieved = orderService.GetOrderById(order.OrderId);
+        Console.WriteLine($"  Repository Retrieval: Found Order #{retrieved?.OrderId} with Total {retrieved?.CalculateTotal():C}");
+
+        // 5. Encapsulation & Validation Boundaries
+        try
+        {
+            Console.WriteLine("\n  Attempting invalid order item (quantity: -3):");
+            new OrderItem(99, laptop, -3);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"  [Blocked by Invariant] {ex.ParamName}: {ex.Message.Split('\n')[0]}");
+            Console.ResetColor();
+        }
         Console.WriteLine("=================================================================================");
     }
 

@@ -1,4 +1,5 @@
 using System.Text;
+using EmployeeDepartmentManagement.Core.Events;
 using EmployeeDepartmentManagement.Core.Interfaces;
 using EmployeeDepartmentManagement.Core.Models;
 using EmployeeDepartmentManagement.Core.ValueObjects;
@@ -12,10 +13,15 @@ namespace EmployeeDepartmentManagement.App.Services;
 /// - Polymorphism (manages both FullTimeEmployee and ContractEmployee through base Employee reference)
 /// - Encapsulation and Data Validation
 /// - Collections (List<Employee>, Dictionary<int, Employee>)
+/// - Events (EmployeeAdded, SalaryChanged)
 /// - StringBuilder for report generation
 /// </summary>
 public class EmployeeService : IEmployeeService
 {
+    // Events demonstrating Publisher/Subscriber notification architecture
+    public event EventHandler<EmployeeEventArgs>? EmployeeAdded;
+    public event EventHandler<SalaryChangedEventArgs>? SalaryChanged;
+
     // List<Employee>: Stores base Employee references polymorphically pointing to FullTimeEmployee or ContractEmployee
     private readonly List<Employee> _employeeList = new();
 
@@ -118,6 +124,47 @@ public class EmployeeService : IEmployeeService
 
         _employeeList.Add(emp);
         _employeeIndex.Add(emp.Id, emp);
+
+        // Raise the EmployeeAdded event to notify any subscribers (Observer Pattern)
+        EmployeeAdded?.Invoke(this, new EmployeeEventArgs(emp, "Enrolled"));
+
+        errorMessage = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// Updates an employee's salary and publishes a SalaryChanged event.
+    /// Demonstrates Event notifications on property mutations.
+    /// </summary>
+    public bool UpdateEmployeeSalary(int id, decimal newSalary, out string errorMessage)
+    {
+        var emp = GetEmployeeById(id);
+        if (emp == null)
+        {
+            errorMessage = $"Employee with ID {id} not found.";
+            return false;
+        }
+
+        if (newSalary <= 0m)
+        {
+            errorMessage = "New compensation must be greater than zero.";
+            return false;
+        }
+
+        decimal oldGross = emp.CalculateGrossPay();
+
+        if (emp is FullTimeEmployee ft)
+        {
+            decimal oldBase = ft.BaseSalary;
+            ft.BaseSalary = newSalary;
+            SalaryChanged?.Invoke(this, new SalaryChangedEventArgs(ft, oldBase, newSalary));
+        }
+        else if (emp is ContractEmployee ct)
+        {
+            decimal oldRate = ct.HourlyRate;
+            ct.HourlyRate = newSalary;
+            SalaryChanged?.Invoke(this, new SalaryChangedEventArgs(ct, oldRate, newSalary));
+        }
 
         errorMessage = string.Empty;
         return true;

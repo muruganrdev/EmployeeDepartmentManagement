@@ -2,41 +2,8 @@ using System;
 
 namespace LeetCode.Day02
 {
-    /// <summary>
-    /// LeetCode 1342: Number of Steps to Reduce a Number to Zero
-    /// Problem URL: https://leetcode.com/problems/number-of-steps-to-reduce-a-number-to-zero/
-    /// 
-    /// Problem Understanding:
-    /// Given an integer num, return the number of steps to reduce it to zero.
-    /// In one step, if the current number is even, divide it by 2;
-    /// otherwise, subtract 1 from it.
-    /// 
-    /// Example 1:
-    /// Input: num = 14
-    /// Output: 6
-    /// Explanation: 
-    /// Step 1) 14 is even; divide by 2 and obtain 7. 
-    /// Step 2) 7 is odd; subtract 1 and obtain 6.
-    /// Step 3) 6 is even; divide by 2 and obtain 3. 
-    /// Step 4) 3 is odd; subtract 1 and obtain 2. 
-    /// Step 5) 2 is even; divide by 2 and obtain 1. 
-    /// Step 6) 1 is odd; subtract 1 and obtain 0.
-    /// 
-    /// Example 2:
-    /// Input: num = 8
-    /// Output: 4
-    /// 
-    /// Example 3 (Edge Case):
-    /// Input: num = 0
-    /// Output: 0
-    /// </summary>
     public class Solution
     {
-        /// <summary>
-        /// Approach 1: Iterative Simulation (Arithmetic)
-        /// Time Complexity: O(log n) - In each step, we either divide by 2 or subtract 1 (which turns an odd number even).
-        /// Space Complexity: O(1) - Only a single counter variable is used.
-        /// </summary>
         public int NumberOfSteps(int num)
         {
             if (num < 0)
@@ -61,12 +28,7 @@ namespace LeetCode.Day02
 
             return steps;
         }
-
-        /// <summary>
-        /// Approach 2: Bit Manipulation (Alternative high-performance approach)
-        /// Even check: (num & 1) == 0
-        /// Divide by 2: num >>= 1
-        /// </summary>
+        
         public int NumberOfStepsBitwise(int num)
         {
             int steps = 0;
