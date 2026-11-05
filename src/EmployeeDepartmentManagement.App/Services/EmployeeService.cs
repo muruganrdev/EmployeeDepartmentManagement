@@ -58,9 +58,13 @@ public class EmployeeService : IEmployeeService
 
     /// <summary>
     /// Validates employee state according to domain business rules.
+    /// Defensively guards against null references.
     /// </summary>
-    public (bool IsValid, string ErrorMessage) ValidateEmployee(Employee emp)
+    public (bool IsValid, string ErrorMessage) ValidateEmployee(Employee? emp)
     {
+        if (emp is null)
+            return (false, "Employee instance cannot be null.");
+
         if (emp.Id <= 0)
             return (false, "Employee ID must be a positive integer greater than zero.");
 
@@ -106,9 +110,16 @@ public class EmployeeService : IEmployeeService
 
     /// <summary>
     /// Enrolls a new employee into the system, enforcing uniqueness and data integrity.
+    /// Defensively guards against null inputs and duplicate IDs.
     /// </summary>
     public bool AddEmployee(Employee emp, out string errorMessage)
     {
+        if (emp is null)
+        {
+            errorMessage = "Cannot enroll a null employee.";
+            return false;
+        }
+
         if (_employeeIndex.ContainsKey(emp.Id))
         {
             errorMessage = $"An employee with ID {emp.Id} already exists.";
@@ -151,8 +162,6 @@ public class EmployeeService : IEmployeeService
             return false;
         }
 
-        decimal oldGross = emp.CalculateGrossPay();
-
         if (emp is FullTimeEmployee ft)
         {
             decimal oldBase = ft.BaseSalary;
@@ -193,41 +202,32 @@ public class EmployeeService : IEmployeeService
 
     /// <summary>
     /// Searches employees by Department (case-insensitive).
+    /// Uses idiomatic LINQ with OrdinalIgnoreCase comparison.
     /// </summary>
     public List<Employee> SearchEmployees(string department)
     {
-        var matched = new List<Employee>();
         if (string.IsNullOrWhiteSpace(department))
-            return matched;
+            return new List<Employee>();
 
-        foreach (var emp in _employeeList)
-        {
-            if (emp.Department.Name.Equals(department.Trim(), StringComparison.OrdinalIgnoreCase))
-            {
-                matched.Add(emp);
-            }
-        }
-        return matched;
+        string trimmedDept = department.Trim();
+        return _employeeList
+            .Where(emp => string.Equals(emp.Department.Name, trimmedDept, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
     /// <summary>
     /// Searches employees by Name query (case-insensitive substring match).
+    /// Uses zero-allocation OrdinalIgnoreCase substring search without string allocations.
     /// </summary>
     public List<Employee> SearchEmployeesByName(string nameQuery)
     {
-        var matched = new List<Employee>();
         if (string.IsNullOrWhiteSpace(nameQuery))
-            return matched;
+            return new List<Employee>();
 
-        string query = nameQuery.Trim().ToLowerInvariant();
-        foreach (var emp in _employeeList)
-        {
-            if (emp.FullName.ToLowerInvariant().Contains(query))
-            {
-                matched.Add(emp);
-            }
-        }
-        return matched;
+        string trimmed = nameQuery.Trim();
+        return _employeeList
+            .Where(emp => emp.FullName.Contains(trimmed, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
     public IReadOnlyList<Employee> GetAllEmployees() => _employeeList.AsReadOnly();

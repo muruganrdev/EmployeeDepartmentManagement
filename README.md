@@ -116,15 +116,26 @@ EmployeeDepartmentManagement/
         │   ├── UML-Class-Diagram.md                # Architecture diagram for Day 1, 2, and 3
         │   ├── LeetCode-Notes.md                   # LeetCode 217 analysis & test suite
         │   └── ContainsDuplicate.cs                # Standalone LeetCode 217 verification harness
-        └── Day-4/                                  # Day 4 Testing & Async deliverables
-            ├── Concepts.md                         # Unit testing, xUnit, Async & CancellationToken guide
-            ├── Unit-Testing-Implementation-Notes.md # Test project architecture & AAA walkthrough
-            ├── Async-Await-Implementation-Notes.md # Genuine async stream I/O vs in-memory tasks
-            ├── CancellationToken-Implementation-Notes.md # Cooperative cancellation & exception handling
-            ├── Execution-Flow.md                   # Multi-project topology & test sequence diagrams
-            ├── Test-Results.md                     # Actual build & test execution log (60 passing tests)
-            ├── LeetCode-Notes.md                   # LeetCode 121 single-pass greedy analysis
-            └── BestTimeToBuyAndSellStock.cs        # Runnable LeetCode 121 verification harness
+        ├── Day-4/                                  # Day 4 Testing & Async deliverables
+        │   ├── Concepts.md                         # Unit testing, xUnit, Async & CancellationToken guide
+        │   ├── Unit-Testing-Implementation-Notes.md # Test project architecture & AAA walkthrough
+        │   ├── Async-Await-Implementation-Notes.md # Genuine async stream I/O vs in-memory tasks
+        │   ├── CancellationToken-Implementation-Notes.md # Cooperative cancellation & exception handling
+        │   ├── Execution-Flow.md                   # Multi-project topology & test sequence diagrams
+        │   ├── Test-Results.md                     # Actual build & test execution log (60 passing tests)
+        │   ├── LeetCode-Notes.md                   # LeetCode 121 single-pass greedy analysis
+        │   └── BestTimeToBuyAndSellStock.cs        # Runnable LeetCode 121 verification harness
+        └── Day-5/                                  # Day 5 Review, Refactoring & Assessment
+            ├── Concepts.md                         # Code review, refactoring & debugging guide
+            ├── Code-Review.md                      # Architecture, SOLID & code quality audit
+            ├── Refactoring-Notes.md                # Before/After/Reason evidence table
+            ├── Validation-and-Edge-Cases.md        # Edge cases & defensive validation matrix
+            ├── Debugging-Notes.md                  # 9-step debugging methodology walkthrough
+            ├── Regression-Test-Results.md          # 83 passed tests & build verification
+            ├── Execution-Flow.md                   # Complete application lifecycle & map
+            ├── LeetCode-Notes.md                   # LeetCode 242 sorting vs frequency array
+            ├── ValidAnagram.cs                     # Runnable LeetCode 242 verification harness
+            └── Final-Week1-Assessment.md           # Mentor checklist & curriculum review
 ```
 
 ---
@@ -339,6 +350,29 @@ Day 4 introduced enterprise-grade automated testing and modern asynchronous resi
 - **Optimal Approach**: Single-pass Greedy running minimum tracking lowest buy price and maximum profit in a single pass.
 - **Complexity**: Time: **O(n)**, Space: **O(1)**.
 - **Verification**: 7 automated test cases passing in standalone runner and xUnit test suite.
+
+---
+
+## Week 1 – Day 5: Mini Project, Debugging, Refactoring & Final Review
+
+Day 5 concluded Week 1 with comprehensive code review, defensive refactoring, structured debugging, and full regression verification:
+
+### Core Capabilities Added:
+1. **Defensive Null Guards**: Fortified `ValidateEmployee` and `AddEmployee` against null references, returning graceful validation responses instead of throwing unhandled `NullReferenceException`.
+2. **Dead Code Elimination**: Removed unused variables (`oldGross`) and redundant allocations.
+3. **Zero-Allocation String Search**: Refactored `SearchEmployeesByName` and `SearchEmployees` to use in-place `StringComparison.OrdinalIgnoreCase` with idiomatic LINQ, eliminating heap string allocations.
+4. **9-Step Debugging Methodology**: Simulated, reproduced, inspected, and fixed an experience boundary defect (`>=` vs `>`), locking in the fix with an automated regression test.
+5. **Expanded Automated Test Suite**: Expanded the xUnit test suite from 60 to **83 passing tests** across 7 test classes.
+6. **Complete Week 1 Documentation Suite**: Authored 9 comprehensive Markdown documents in `docs/Week-1/Day-5/`.
+
+### Day 5 LeetCode Solution
+- **Problem**: [LeetCode 242: Valid Anagram](https://leetcode.com/problems/valid-anagram/)
+- **Location**: [`docs/Week-1/Day-5/ValidAnagram.cs`](docs/Week-1/Day-5/ValidAnagram.cs)
+- **Approaches**:
+  - Approach 1: Sorting – $O(n \log n)$ Time, $O(n)$ Space.
+  - Approach 2: Character Frequency Array (Optimal) – $O(n)$ Time, $O(1)$ Space.
+- **Verification**: 9 automated test cases passing in standalone runner and xUnit test suite.
+
 
 
 

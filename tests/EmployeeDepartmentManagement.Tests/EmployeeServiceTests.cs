@@ -249,4 +249,95 @@ public class EmployeeServiceTests
         Assert.NotNull(results);
         Assert.Empty(results); // Demonstrates Assert.Empty()
     }
+
+    [Fact]
+    public void ValidateEmployee_NullEmployee_ReturnsFalseWithDescriptiveMessage()
+    {
+        // ARRANGE & ACT
+        var (isValid, errorMessage) = _sut.ValidateEmployee(null!);
+
+        // ASSERT
+        Assert.False(isValid);
+        Assert.Equal("Employee instance cannot be null.", errorMessage);
+    }
+
+    [Fact]
+    public void AddEmployee_NullEmployee_ReturnsFalseSafelyWithoutThrowingNullReferenceException()
+    {
+        // ARRANGE & ACT
+        bool result = _sut.AddEmployee(null!, out string errorMessage);
+
+        // ASSERT
+        Assert.False(result);
+        Assert.Equal("Cannot enroll a null employee.", errorMessage);
+    }
+
+    [Fact]
+    public void SearchEmployeesByName_QueryWithWhitespaceAndMixedCasing_MatchesCorrectly()
+    {
+        // ARRANGE
+        const string queryWithWhitespace = "   aarav   ";
+
+        // ACT
+        var results = _sut.SearchEmployeesByName(queryWithWhitespace);
+
+        // ASSERT
+        Assert.NotEmpty(results);
+        Assert.Contains(results, emp => emp.FullName.Contains("Aarav", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void SearchEmployees_NullOrWhitespaceDepartment_ReturnsEmptyList()
+    {
+        // ARRANGE & ACT & ASSERT
+        Assert.Empty(_sut.SearchEmployees(null!));
+        Assert.Empty(_sut.SearchEmployees("   "));
+        Assert.Empty(_sut.SearchEmployeesByName(null!));
+        Assert.Empty(_sut.SearchEmployeesByName("   "));
+    }
+
+    [Fact]
+    public void UpdateEmployeeSalary_ZeroCompensation_ReturnsFalseWithErrorMessage()
+    {
+        // ARRANGE
+        const int existingEmployeeId = 101;
+
+        // ACT
+        bool result = _sut.UpdateEmployeeSalary(existingEmployeeId, 0m, out string errorMessage);
+
+        // ASSERT
+        Assert.False(result);
+        Assert.Contains("greater than zero", errorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// REGRESSION TEST: Debugging Defect Fix
+    /// An 18-year-old employee with 2 years of experience (18 - 16 = 2)
+    /// was previously falsely rejected when the comparison was 'emp.YearsOfExperience >= emp.Age - 16'.
+    /// This test guarantees that boundary condition (experience == age - 16) is accepted!
+    /// </summary>
+    [Fact]
+    public void ValidateEmployee_EighteenYearOldWithTwoYearsExperience_ReturnsTrue()
+    {
+        // ARRANGE
+        var boundaryEmployee = new FullTimeEmployee(
+            id: 887,
+            firstName: "Young",
+            lastName: "Professional",
+            middleName: null,
+            department: Department.FromName("Engineering"),
+            baseSalary: 60000m,
+            annualBonus: null,
+            age: 18,
+            yearsOfExperience: 2, // 18 - 16 = 2 (Valid boundary!)
+            joiningDate: DateTime.Today
+        );
+
+        // ACT
+        var (isValid, errorMessage) = _sut.ValidateEmployee(boundaryEmployee);
+
+        // ASSERT
+        Assert.True(isValid, $"Expected valid candidate to be accepted, but got: {errorMessage}");
+        Assert.Empty(errorMessage);
+    }
 }
